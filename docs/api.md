@@ -110,6 +110,19 @@ payload = api.to_dict(comparison)   # same shape as --json
 Like the CLI, this needs Ollama running locally with the model installed: the
 assessment comes from a judge on your machine, not from a bundled heuristic.
 
+### BMAD stories
+
+The CLI, not `analyze`, picks this up. If the project contains
+`_bmad-output/implementation-artifacts/sprint-status.yaml`, `specjudge` judges every story
+whose status is `ready-for-dev` and, with `--json`, prints:
+
+```json
+{ "bmad": [ { "story": "1-2-account-management", "file": "...md", "comparison": {} } ] }
+```
+
+Each `comparison` is the object documented here. `analyze` still reads one spec-kit project
+and still returns one `Comparison`.
+
 ### Using a different judge endpoint
 
 `judge_url` points the judge at any OpenAI-compatible endpoint instead of local Ollama:
