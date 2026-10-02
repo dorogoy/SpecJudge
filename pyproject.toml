@@ -40,7 +40,7 @@ Issues = "https://github.com/JoaquinRuiz/SpecJudge/issues"
 Author = "https://jokiruiz.com"
 
 [project.scripts]
-specjudge = "specjudge.cli:app"
+specjudge = "specjudge.cli:main_entry"
 
 [project.optional-dependencies]
 dev = [
