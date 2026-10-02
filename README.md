@@ -179,6 +179,7 @@ SpecJudge reads whatever written context your project already has:
 | editor rules | `.cursorrules`, `.github/copilot-instructions.md` |
 | path-specific instructions | `.github/instructions/*.instructions.md`, filtered by their `applyTo` glob |
 | decision records | `docs/adr/`, `docs/decisions/`, `adr/` |
+| BMAD stories | `_bmad-output/implementation-artifacts/sprint-status.yaml` |
 
 They are read together, because they say different things: the artifacts describe the work you are
 about to do, and the rest describes how demanding the codebase is to work in at all.
@@ -198,6 +199,13 @@ repository already contains — or something `plan.md` and `tasks.md` say will b
 Every file considered is reported with the reason, included or not, so a glob that matches nothing
 is visible instead of silent. Set `sources.instructions: all` in `data/rating-rules.yaml` to read
 them all regardless, which is the right setting for a feature so new that nothing matches yet.
+
+When that sprint file is present, SpecJudge judges each story whose status is `ready-for-dev`
+and prints a recommendation for every one of them. The story markdown is the spec; its checklist
+is the task list. Epics and retrospectives in the same file are ignored. Other statuses
+(`backlog`, `in-progress`, `review`, `done`) are left alone. With `--json`, the payload is
+`{"bmad": [{"story", "file", "comparison"}, ...]}`, and `comparison` is the usual object.
+A project without that file is unchanged.
 
 So you do not need a full Spec-Driven Development setup to get an answer. A repository with only
 an `AGENTS.md` gets a **floor** — how much model this codebase asks for before anyone writes a

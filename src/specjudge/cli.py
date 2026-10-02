@@ -16,6 +16,7 @@ import typer
 
 from . import __version__, errors
 from .artifacts import read_project
+from .bmad import BmadStory, read_bmad_story, ready_for_dev
 from .catalog import check_freshness, load_catalog
 from .config import DEFAULT_HOST, load_config, save_config
 from .domain import DataState, ExecutionModel, JudgePreference, UserConfig
@@ -214,29 +215,146 @@ def _run(
 ) -> None:
     rules = load_rules()
     execution = _resolve_execution_model(execution_model, rules)
+    stories = ready_for_dev(project_path)
+    if stories is not None:
+        _run_bmad(
+            project_path,
+            stories,
+            rules,
+            execution,
+            open_browser,
+            judge,
+            set_judge,
+            catalog,
+            as_json,
+            no_color,
+            judge_url,
+        )
+        return
 
     # 1. Read and classify the artifacts.
     analysis = read_project(project_path, rules)
-    if analysis.data_state == DataState.INSUFFICIENT:
-        raise errors.insufficient_project()
+    comparison, gaps = _assess(
+        analysis,
+        rules,
+        execution,
+        *_prepare(judge, set_judge, catalog, judge_url, rules),
+    )
+    _emit(comparison, gaps, as_json=as_json, no_color=no_color, open_browser=open_browser)
 
-    # 2. Load and validate the catalog.
+
+def _run_bmad(
+    project_path: Path,
+    stories: list[BmadStory],
+    rules,
+    execution: ExecutionModel,
+    open_browser: bool,
+    judge: str | None,
+    set_judge: bool,
+    catalog: Path | None,
+    as_json: bool,
+    no_color: bool,
+    judge_url: str | None,
+) -> None:
+    """One recommendation per ready-for-dev story. The judge is resolved once."""
+    if not stories:
+        raise errors.InsufficientInfoError(
+            "No BMAD story is marked ready-for-dev.",
+            hint=(
+                "sprint-status.yaml was found, and none of its stories have status "
+                "ready-for-dev. Create the next story, or mark one ready, and run again."
+            ),
+        )
+
+    prepared = _prepare(judge, set_judge, catalog, judge_url, rules)
+    judged = []
+    skipped: list[tuple[str, str, str]] = []
+    for story in stories:
+        analysis = read_bmad_story(project_path, story, rules)
+        rel = _relative(project_path, story.path)
+        try:
+            comparison, gaps = _assess(analysis, rules, execution, *prepared)
+        except errors.InsufficientInfoError as exc:
+            skipped.append((story.key, rel, exc.message))
+            continue
+        except errors.JudgeUnavailableError as exc:
+            # A story the judge cannot score is that story's problem. The judge
+            # being down, or too old, is the run's problem.
+            if "usable assessment" not in exc.message:
+                raise
+            skipped.append((story.key, rel, exc.message))
+            continue
+        judged.append((story.key, rel, comparison, gaps))
+
+    if not judged:
+        detail = "\n".join(f"  - {key} ({path}): {message}" for key, path, message in skipped)
+        raise errors.InsufficientInfoError(
+            "No ready-for-dev BMAD story could be judged.",
+            hint=detail or "The story files were missing or too thin to assess.",
+        )
+
+    if as_json:
+        payload = {
+            "bmad": [
+                {
+                    "story": key,
+                    "file": path,
+                    "comparison": comparison_to_dict(comparison),
+                }
+                for key, path, comparison, _gaps in judged
+            ]
+        }
+        if skipped:
+            payload["skipped"] = [
+                {"story": key, "file": path, "error": message} for key, path, message in skipped
+            ]
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        for key, path, message in skipped:
+            typer.echo(f"Skipped {key} ({path}): {message}", err=True)
+        for key, path, comparison, gaps in judged:
+            typer.echo(f"\nBMAD story {key}")
+            typer.echo(path)
+            _emit(
+                comparison,
+                gaps,
+                as_json=False,
+                no_color=no_color,
+                open_browser=open_browser,
+            )
+
+
+def _prepare(
+    judge: str | None,
+    set_judge: bool,
+    catalog: Path | None,
+    judge_url: str | None,
+    rules,
+):
+    """Catalog and judge, shared by a spec-kit run and every BMAD story in a run."""
     models, catalog_warnings = load_catalog(catalog)
     if not models:
         raise errors.catalog_empty(str(catalog) if catalog else "data/models.yaml")
     assert_dimensions_match(models, rules)
-    # Stale prices don't block a recommendation, they qualify it (FR-019).
     catalog_warnings += check_freshness(models, rules.max_pricing_age_days)
 
-    # 3. Resolve the local judge (critical dependency).
     config = load_config()
     client = build_client(config, base_url=judge_url, default_host=DEFAULT_HOST)
-    interactive = sys.stdin.isatty()
-    judge_model, config = resolve_judge(
-        config, client, forced_judge=judge, set_judge=set_judge, interactive=interactive
+    judge_model, _config = resolve_judge(
+        config,
+        client,
+        forced_judge=judge,
+        set_judge=set_judge,
+        interactive=sys.stdin.isatty(),
     )
+    return models, catalog_warnings, client, judge_model
 
-    # 4. Estimate demand and rate the catalog.
+
+def _assess(analysis, rules, execution, models, catalog_warnings, client, judge_model):
+    """Demand, envelope, and the ranked comparison for one body of work."""
+    if analysis.data_state == DataState.INSUFFICIENT:
+        raise errors.insufficient_project()
+
     demand = estimate_demand(analysis, rules, client, judge_model)
 
     # No dimension the judge could ground means no demand profile to rank against.
@@ -283,6 +401,10 @@ def _run(
     # carries the assessment, not editorial advice about how to improve it.
     gaps = find_gaps(analysis, rules) if data_state == DataState.SCARCE else []
 
+    return comparison, gaps
+
+
+def _emit(comparison, gaps, *, as_json: bool, no_color: bool, open_browser: bool) -> None:
     if as_json:
         typer.echo(json.dumps(comparison_to_dict(comparison), ensure_ascii=False, indent=2))
     else:
@@ -292,6 +414,13 @@ def _run(
         out = open_in_browser(comparison, gaps=gaps)
         if not as_json:
             typer.echo(f"\nHTML matrix: {out}")
+
+
+def _relative(project_path: Path, path: Path) -> str:
+    try:
+        return path.relative_to(project_path).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 if __name__ == "__main__":

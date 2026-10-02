@@ -9,6 +9,14 @@ Entries before 0.1.4 were reconstructed from the git tags and the GitHub release
 
 ## [Unreleased]
 
+### Added
+
+- **BMAD stories marked ready-for-dev are judged one by one.** When
+  `_bmad-output/implementation-artifacts/sprint-status.yaml` exists, SpecJudge reads every
+  story with status `ready-for-dev` and prints a recommendation for each. `--json` wraps
+  those results as `{"bmad": [{"story", "file", "comparison"}]}`. A project without that
+  file is unchanged, including the `--json` object.
+
 ## [0.7.0] - 2026-09-24
 
 The judge no longer has to be Ollama. It never had to be — Ollama was the shortest path to a
