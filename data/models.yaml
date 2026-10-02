@@ -9,7 +9,10 @@
 # Dimensions must match those in data/rating-rules.yaml.
 #
 # Prices are per million tokens, in USD, and are a MAINTAINED REFERENCE — not a
-# live feed. Verify against the provider's pricing page before relying on them.
+# live feed. `specjudge prices` compares a row with models.dev when the row has
+# `price_source`, and writes the three price fields only if you pass `--write`.
+# Rows without `price_source` (local, host-dependent, OpenRouter-hosted) stay
+# hand-edited, and so do capabilities and notes.
 
 version: 1
 
@@ -29,6 +32,9 @@ models:
       reasoning: top
       size: top
       domain_specialization: top
+    price_source:
+      provider: anthropic
+      model: claude-fable-5
     price:
       input_per_million: 10.00
       output_per_million: 50.00
@@ -48,6 +54,9 @@ models:
       reasoning: top
       size: top
       domain_specialization: top
+    price_source:
+      provider: anthropic
+      model: claude-opus-5
     price:
       input_per_million: 5.00
       output_per_million: 25.00
@@ -66,6 +75,11 @@ models:
       reasoning: high
       size: top
       domain_specialization: high
+    # Introductory price. Reported, not written, until this is the list price.
+    price_source:
+      provider: anthropic
+      model: claude-sonnet-5
+      review: true
     price:
       input_per_million: 2.00
       output_per_million: 10.00
@@ -84,6 +98,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: medium
+    price_source:
+      provider: anthropic
+      model: claude-haiku-4-5
     price:
       input_per_million: 1.00
       output_per_million: 5.00
@@ -101,6 +118,9 @@ models:
       reasoning: top
       size: top
       domain_specialization: top
+    price_source:
+      provider: openai
+      model: gpt-5.6-sol
     price:
       input_per_million: 5.00
       output_per_million: 30.00
@@ -119,6 +139,9 @@ models:
       reasoning: high
       size: high
       domain_specialization: high
+    price_source:
+      provider: openai
+      model: gpt-5.6-terra
     price:
       input_per_million: 2.00
       output_per_million: 12.00
@@ -135,6 +158,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: medium
+    price_source:
+      provider: openai
+      model: gpt-5.6-luna
     price:
       input_per_million: 0.20
       output_per_million: 1.20
@@ -151,6 +177,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: low
+    price_source:
+      provider: openai
+      model: gpt-5.4-mini
     price:
       input_per_million: 0.75
       output_per_million: 4.50
@@ -167,6 +196,9 @@ models:
       reasoning: low
       size: low
       domain_specialization: low
+    price_source:
+      provider: openai
+      model: gpt-5.4-nano
     price:
       input_per_million: 0.20
       output_per_million: 1.25
@@ -184,6 +216,10 @@ models:
       reasoning: high
       size: top
       domain_specialization: high
+    # models.dev lists this rate on the preview id.
+    price_source:
+      provider: google
+      model: gemini-3.1-pro-preview
     price:
       input_per_million: 2.00
       output_per_million: 12.00
@@ -202,6 +238,9 @@ models:
       reasoning: high
       size: high
       domain_specialization: medium
+    price_source:
+      provider: google
+      model: gemini-3.6-flash
     price:
       input_per_million: 1.50
       output_per_million: 7.50
@@ -221,6 +260,10 @@ models:
       reasoning: medium
       size: high
       domain_specialization: medium
+    # models.dev lists this rate on the preview id.
+    price_source:
+      provider: google
+      model: gemini-3-flash-preview
     price:
       input_per_million: 0.50
       output_per_million: 3.00
@@ -237,6 +280,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: low
+    price_source:
+      provider: google
+      model: gemini-3.5-flash-lite
     price:
       input_per_million: 0.30
       output_per_million: 2.50
@@ -253,6 +299,9 @@ models:
       reasoning: low
       size: medium
       domain_specialization: low
+    price_source:
+      provider: google
+      model: gemini-3.1-flash-lite
     price:
       input_per_million: 0.25
       output_per_million: 1.50
@@ -464,6 +513,9 @@ models:
       reasoning: high
       size: high
       domain_specialization: high
+    price_source:
+      provider: zai
+      model: glm-5.2
     price:
       input_per_million: 1.40
       output_per_million: 4.40
@@ -482,6 +534,9 @@ models:
       reasoning: high
       size: high
       domain_specialization: medium
+    price_source:
+      provider: zai
+      model: glm-5.1
     price:
       input_per_million: 1.40
       output_per_million: 4.40
@@ -500,6 +555,9 @@ models:
       reasoning: medium
       size: high
       domain_specialization: medium
+    price_source:
+      provider: zai
+      model: glm-4.7
     price:
       input_per_million: 0.60
       output_per_million: 2.20
@@ -516,6 +574,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: low
+    price_source:
+      provider: zai
+      model: glm-4.5-air
     price:
       input_per_million: 0.20
       output_per_million: 1.10
@@ -532,6 +593,9 @@ models:
       reasoning: low
       size: medium
       domain_specialization: low
+    price_source:
+      provider: zai
+      model: glm-4.7-flash
     price:
       input_per_million: 0.00
       output_per_million: 0.00
@@ -556,6 +620,9 @@ models:
       reasoning: medium
       size: medium
       domain_specialization: medium
+    price_source:
+      provider: deepseek
+      model: deepseek-v4-flash
     price:
       input_per_million: 0.14
       output_per_million: 0.28
@@ -574,6 +641,9 @@ models:
       reasoning: high
       size: high
       domain_specialization: medium
+    price_source:
+      provider: deepseek
+      model: deepseek-v4-pro
     price:
       input_per_million: 0.435
       output_per_million: 0.87
@@ -592,6 +662,9 @@ models:
       reasoning: high
       size: top
       domain_specialization: high
+    price_source:
+      provider: moonshotai
+      model: kimi-k3
     price:
       input_per_million: 3.00
       output_per_million: 15.00
@@ -649,6 +722,11 @@ models:
       reasoning: high
       size: high
       domain_specialization: high
+    # Catalog stores the promotion; models.dev stores the list price.
+    price_source:
+      provider: alibaba
+      model: qwen3.7-max
+      review: true
     price:
       input_per_million: 1.25
       output_per_million: 3.75

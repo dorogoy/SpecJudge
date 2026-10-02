@@ -393,11 +393,21 @@ human-readable data files, deliberately separate from the code. Adding a model i
 Open `data/models.yaml`, add it, send the PR. Contract tests validate the schema automatically,
 so a mistake can't slip through unnoticed.
 
+Prices that already have a `price_source` can be checked against the lab's list rate
+without editing by hand:
+
+```bash
+specjudge prices            # report
+specjudge prices --write    # update the price fields it is sure about
+```
+
+Capability ratings stay hand-edited either way.
+
 ### Good first contributions
 
 | Difficulty | What | Where |
 |---|---|---|
-| 🟢 No code | Update a price that has changed | `data/models.yaml` |
+| 🟢 No code | Update a price that has changed | `specjudge prices`, then `data/models.yaml` |
 | 🟢 No code | Add a model that's missing | `data/models.yaml` |
 | 🟢 No code | Fix a capability rating you disagree with | `data/models.yaml` |
 | 🟢 No code | Add a project to the judge evaluation corpus | `tests/fixtures/corpus/` |

@@ -9,6 +9,15 @@ Entries before 0.1.4 were reconstructed from the git tags and the GitHub release
 
 ## [Unreleased]
 
+### Added
+
+- `specjudge prices` compares `data/models.yaml` with the first-party list rates on
+  models.dev and, with `--write`, updates `input_per_million`, `output_per_million`
+  and `pricing_date`. The recommendation command does not call it. Capability
+  ratings stay hand-edited. Moves over 25% and deprecated models wait for
+  `--accept`. Rows without `price_source`, and rows marked `review: true`, are
+  reported and left alone.
+
 ## [0.7.0] - 2026-09-24
 
 The judge no longer has to be Ollama. It never had to be — Ollama was the shortest path to a

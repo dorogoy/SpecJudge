@@ -31,6 +31,9 @@ Each model is an entry under `models:`:
 **Important rules:**
 
 - Any price change MUST update `pricing_date` so its freshness stays verifiable.
+- A row the price command may check also has `price_source` (see below). Leave it
+  off for a local row, a host-dependent placeholder, or a rate that is not the
+  lab's own list price.
 - `capabilities` MUST cover every dimension declared in `dimensions`.
 - The `dimensions` set in `models.yaml` and in `rating-rules.yaml` MUST match.
 - The README's worked example is generated from this catalog. If your edit changes the
@@ -39,6 +42,34 @@ Each model is an entry under `models:`:
   ```bash
   uv run python scripts/render_example.py --write
   ```
+
+## Refreshing prices — `specjudge prices`
+
+`specjudge prices` reads the first-party list rates from [models.dev](https://models.dev)
+and prints what would change. It writes `data/models.yaml` only with `--write`, and
+only `input_per_million`, `output_per_million` and `pricing_date`. A recommendation
+does not call this, and does not reach the network for prices.
+
+```yaml
+price_source:
+  provider: openai        # models.dev provider id
+  model: gpt-5.6-terra    # that provider's model id
+  review: true            # optional: print the upstream rate, never write it
+```
+
+`review: true` is for a promotion or an introductory price, where the catalog figure
+and the list price are different on purpose. A move over 25%, or a model models.dev
+marks deprecated, is printed and skipped unless you also pass `--accept`.
+
+```bash
+specjudge prices                  # report only
+specjudge prices --write          # apply the quiet updates and bump pricing_date
+specjudge prices --write --accept # also apply the held rows
+```
+
+`--source file.json` reads a saved payload instead of the network. A write to the
+repo catalog regenerates the README example. A project directory named `prices` is
+analyzed with `specjudge ./prices`.
 
 ## Tuning the rating rules — `data/rating-rules.yaml`
 

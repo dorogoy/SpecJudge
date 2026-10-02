@@ -29,6 +29,7 @@ from .judge.evaluator import (
     estimate_demand,
     evidence_warnings,
 )
+from .prices import prices_app
 from .rating import assert_dimensions_match, evaluate_all, load_rules
 from .recommend import build_comparison
 from .render.html import open_in_browser
@@ -160,7 +161,11 @@ def main(
         help="Show the version and exit.",
     ),
 ) -> None:
-    """Analyze the project and show the model comparison."""
+    """Analyze the project and show the model comparison.
+
+    Refresh catalog prices separately with `specjudge prices`. A project directory
+    named prices is analyzed as `specjudge ./prices`.
+    """
     try:
         _run(
             project_path,
@@ -294,5 +299,14 @@ def _run(
             typer.echo(f"\nHTML matrix: {out}")
 
 
-if __name__ == "__main__":
+def main_entry() -> None:
+    """Console script. `prices` is its own command; everything else recommends."""
+    if len(sys.argv) > 1 and sys.argv[1] == "prices":
+        del sys.argv[1]
+        prices_app()
+        return
     app()
+
+
+if __name__ == "__main__":
+    main_entry()
